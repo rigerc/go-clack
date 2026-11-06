@@ -44,6 +44,7 @@ type Prompt[TValue any] struct {
 	Error       string
 	Value       TValue
 	CursorIndex int
+	HeaderLines int
 
 	Validate           func(value TValue) error
 	ValidationDuration time.Duration
@@ -275,12 +276,39 @@ func (p *Prompt[TValue]) Size() (width int, height int, err error) {
 
 // render renders a new frame to the output.
 func (p *Prompt[TValue]) render() {
-	frame := p.Render(p)
+	persistent.Lock()
+	defer persistent.Unlock()
 
-	if p.State == InitialState {
+	header := ""
+	if persistent.output == p.output && len(persistent.components) > 0 {
+		header = persistentHeader()
+	}
+	p.HeaderLines = 0
+	if header != "" {
+		p.HeaderLines = len(utils.SplitLines(header))
+	}
+	frame := p.Render(p)
+	if header != "" {
+		frame = header + "\r\n" + frame
+	}
+
+	if p.State == InitialState && p.Frame == "" {
 		p.output.WriteString(sisteransi.HideCursor())
+
+		// A completed form leaves the cursor one line below its last frame.
+		// Replace that frame so persistent components remain above the next form.
+		if persistent.output == p.output && persistent.completed && persistent.lastFrame != "" && len(persistent.components) > 0 {
+			previousLines := utils.SplitLines(persistent.lastFrame)
+			p.output.WriteString(sisteransi.MoveCursor(-len(previousLines), -999))
+			p.output.WriteString(sisteransi.EraseDown())
+		}
+
 		p.output.WriteString(frame)
 		p.Frame = frame
+		if persistent.output == p.output && len(persistent.components) > 0 {
+			persistent.lastFrame = frame
+			persistent.completed = false
+		}
 		return
 	}
 
@@ -290,9 +318,9 @@ func (p *Prompt[TValue]) render() {
 
 	diff := p.DiffLines(frame, p.Frame)
 	diffLineIndex := diff[0]
-	prevFrameLines := utils.SplitLines((p.Frame))
+	prevFrameLines := utils.SplitLines(p.Frame)
 
-	// Move to first diff line
+	// Move to first changed line and clear the old remainder.
 	p.output.WriteString(sisteransi.MoveCursor(-(len(prevFrameLines) - 1), -999))
 	p.output.WriteString(sisteransi.MoveCursor(diffLineIndex, 0))
 	p.output.WriteString(sisteransi.EraseDown())
@@ -300,6 +328,9 @@ func (p *Prompt[TValue]) render() {
 	newLines := lines[diffLineIndex:]
 	p.output.WriteString(strings.Join(newLines, "\r\n"))
 	p.Frame = frame
+	if persistent.output == p.output && len(persistent.components) > 0 {
+		persistent.lastFrame = frame
+	}
 }
 
 // Run runs the prompt and processes input.
@@ -313,6 +344,9 @@ func (p *Prompt[TValue]) Run() (TValue, error) {
 		}
 		defer term.Restore(int(p.input.Fd()), oldState)
 	}
+
+	beginPersistent(p.output, p.render)
+	defer endPersistent(p.output)
 
 	done := make(chan struct{})
 	closeCb := func(args ...any) {

@@ -9,6 +9,7 @@ var (
 	ConfirmTestingPrompt          *core.ConfirmPrompt         = nil
 	SelectPathTestingPrompt       *core.SelectPathPrompt      = nil
 	SelectTestingPrompt           any                         = nil
+	ReorderTestingPrompt          any                         = nil
 	MultiSelectTestingPrompt      any                         = nil
 	GroupMultiSelectTestingPrompt any                         = nil
 	SelectKeyTestingPrompt        any                         = nil

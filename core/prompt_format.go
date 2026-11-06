@@ -47,7 +47,7 @@ func (p *Prompt[TValue]) LimitLines(lines []string, usedLines int) string {
 	if err != nil {
 		maxRows = 10
 	}
-	maxItems := max(min(maxRows-usedLines, len(lines)), 0)
+	maxItems := max(min(maxRows-usedLines-p.HeaderLines, len(lines)), 0)
 
 	slidingWindowLocation := 0
 	if p.CursorIndex >= maxItems-3 {
