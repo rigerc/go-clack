@@ -66,8 +66,8 @@ func endPersistent(output *os.File) {
 	}
 }
 
-func persistentFrame(form string) string {
-	parts := make([]string, 0, len(persistent.components)+1)
+func persistentHeader() string {
+	parts := make([]string, 0, len(persistent.components))
 	for _, component := range persistent.components {
 		if component == nil {
 			continue
@@ -77,6 +77,5 @@ func persistentFrame(form string) string {
 			parts = append(parts, content)
 		}
 	}
-	parts = append(parts, form)
 	return strings.Join(parts, "\r\n")
 }
