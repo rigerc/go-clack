@@ -169,6 +169,66 @@ project, err := prompts.Select(prompts.SelectParams{
 })
 ```
 
+### Reorder
+
+The `Reorder` form lets users arrange a list without losing any items. Arrow keys navigate; press **Space** to pick up or drop an item, and **Enter** to confirm the final order.
+
+```go
+order, err := prompts.Reorder(prompts.ReorderParams[string]{
+  Message: "Order the deployment steps:",
+  Options: []*prompts.ReorderOption[string]{
+    {Label: "Install", Value: "install"},
+    {Label: "Build", Value: "build"},
+    {Label: "Deploy", Value: "deploy"},
+  },
+})
+prompts.ExitOnError(err)
+// order contains all three values in the order chosen by the user
+```
+
+### Banner
+
+`Banner` prints FIGlet ASCII art using the renderer in `prompts/banner`. It supports fonts, colors, custom gradients, random presets, and plain or ANSI output.
+
+```go
+import "github.com/orochaa/go-clack/prompts/banner"
+
+err := prompts.Banner("CLACK", prompts.BannerOptions{
+  Config: banner.Config{
+    Font: "standard",
+    Gradient: &banner.GradientOcean,
+  },
+})
+prompts.ExitOnError(err)
+```
+
+### Persistent components above forms
+
+Use `SetPersistent` to keep a banner or other component above successive interactive forms. When the next form starts, it replaces the previous form while the persistent header stays in place. This mode supports one active form at a time and components are rendered in order.
+
+```go
+header, err := prompts.BannerComponent(banner.Config{
+  Text: "CLACK",
+  Font: "standard",
+  Gradient: &banner.GradientOcean,
+})
+prompts.ExitOnError(err)
+
+prompts.SetPersistent(
+  header,
+  prompts.StaticComponent("Project setup"),
+)
+defer prompts.ClearPersistent()
+
+name, err := prompts.Text(prompts.TextParams{Message: "Project name?"})
+prompts.ExitOnError(err)
+_, err = prompts.Confirm(prompts.ConfirmParams{Message: "Continue?"})
+prompts.ExitOnError(err)
+_ = name
+```
+
+Persistent components may also be functions that return fresh text. Call `prompts.RefreshPersistent()` to redraw the active form with updated content. `ClearPersistent()` removes the registered header for future renders; it does not erase terminal history.
+
 ### MultiSelect
 
 The `MultiSelect`component allows the user to choose multiple options from a list.
