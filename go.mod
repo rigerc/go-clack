@@ -4,6 +4,7 @@ go 1.22.1
 
 require (
 	github.com/bradleyjkemp/cupaloy v2.3.0+incompatible
+	github.com/lsferreira42/figlet-go v0.0.2-beta
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/term v0.28.0
 )
