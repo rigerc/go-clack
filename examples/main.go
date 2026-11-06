@@ -26,6 +26,7 @@ func main() {
 			{Label: "file-selection"},
 			{Label: "race-condition"},
 			{Label: "custom-keys"},
+			{Label: "reorder-banner"},
 		},
 	})
 	if err != nil {
@@ -52,6 +53,8 @@ func main() {
 		RaceCondition()
 	case "custom-keys":
 		CustomKeys()
+	case "reorder-banner":
+		ReorderBannerExample()
 	default:
 		prompts.Error("example not found")
 	}
