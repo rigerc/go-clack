@@ -44,6 +44,7 @@ type Prompt[TValue any] struct {
 	Error       string
 	Value       TValue
 	CursorIndex int
+	HeaderLines int
 
 	Validate           func(value TValue) error
 	ValidationDuration time.Duration
@@ -278,9 +279,17 @@ func (p *Prompt[TValue]) render() {
 	persistent.Lock()
 	defer persistent.Unlock()
 
-	frame := p.Render(p)
+	header := ""
 	if persistent.output == p.output && len(persistent.components) > 0 {
-		frame = persistentFrame(frame)
+		header = persistentHeader()
+	}
+	p.HeaderLines = 0
+	if header != "" {
+		p.HeaderLines = len(utils.SplitLines(header))
+	}
+	frame := p.Render(p)
+	if header != "" {
+		frame = header + "\r\n" + frame
 	}
 
 	if p.State == InitialState && p.Frame == "" {
